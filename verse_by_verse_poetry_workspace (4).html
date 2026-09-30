@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verse By Verse - AI Poetry Workspace</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        parchment: {
+                            50: '#FAF7F0',
+                            100: '#F4EFE6',
+                            200: '#E8DFD1',
+                            300: '#D6C7B2',
+                            800: '#3D3429',
+                            900: '#28221A',
+                        },
+                        literary: {
+                            gold: '#C59B27',
+                            burgundy: '#6B1D2F',
+                            ink: '#1E293B',
+                            teal: '#1E4D4F'
+                        }
+                    },
+                    fontFamily: {
+                        serif: ['Playfair Display', 'Georgia', 'serif'],
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['Courier Prime', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime&family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FAF7F0;
+            color: #1E293B;
+        }
+        .font-serif-literary {
+            font-family: 'Playfair Display', Georgia, serif;
+        }
+        .font-mono-typewriter {
+            font-family: 'Courier Prime', monospace;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(107, 29, 47, 0.3);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(107, 29, 47, 0.6);
+        }
+        .poet-card-selected {
+            box-shadow: 0 0 0 2px #6B1D2F, 0 8px 12px -2px rgba(107, 29, 47, 0.15);
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden bg-parchment-50 text-slate-800">
+
+    <header class="h-16 bg-parchment-100 border-b border-parchment-200 px-6 flex items-center justify-between z-20 shrink-0">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-full bg-literary-burgundy text-parchment-50 flex items-center justify-center text-xl shadow-md font-serif-literary font-bold">
+                𝒱
+            </div>
+            <div>
+                <h1 class="text-xl font-bold font-serif-literary text-literary-burgundy leading-none">Verse by Verse</h1>
+                <p class="text-xs text-slate-500 font-sans tracking-wide mt-0.5">AI Collaborative Poetry Workspace</p>
+            </div>
+        </div>
+
+        <!-- Middle Quick Indicators -->
+        <div class="hidden md:flex items-center space-x-6 text-xs text-slate-600 font-medium">
+            <div class="flex items-center space-x-1.5 bg-parchment-200/60 px-3 py-1.5 rounded-full">
+                <i class="fa-solid fa-compass text-literary-burgundy"></i>
+                <span id="activeThemeLabel">Nature & Seasons</span>
+            </div>
+            <div class="flex items-center space-x-1.5 bg-parchment-200/60 px-3 py-1.5 rounded-full">
+                <i class="fa-solid fa-feather text-literary-burgundy"></i>
+                <span id="activeFormLabel">Free Verse</span>
+            </div>
+            <div class="flex items-center space-x-1.5 bg-parchment-200/60 px-3 py-1.5 rounded-full">
+                <i class="fa-solid fa-users text-literary-burgundy"></i>
+                <span id="activeMusesCount">2/3 Muses Selected</span>
+            </div>
+        </div>
+
+        <!-- Toolbar Buttons -->
+        <div class="flex items-center space-x-2">
+            <button id="btnTextToSpeech" onclick="toggleAudioPlayback()" class="p-2.5 text-slate-600 hover:text-literary-burgundy hover:bg-parchment-200 rounded-lg transition" title="Listen to Poem">
+                <i class="fa-solid fa-volume-high text-lg"></i>
+            </button>
+            <button id="btnExport" onclick="exportPoem()" class="p-2.5 text-slate-600 hover:text-literary-burgundy hover:bg-parchment-200 rounded-lg transition" title="Export Poem">
+                <i class="fa-solid fa-download text-lg"></i>
+            </button>
+            <button id="btnClear" onclick="confirmClearWorkspace()" class="p-2.5 text-slate-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Clear Canvas">
+                <i class="fa-solid fa-trash-can text-lg"></i>
+            </button>
+        </div>
+    </header>
+
+    <div class="flex-1 flex overflow-hidden relative">
+
+        <!-- LEFT SIDEBAR: Poet Muse Selector & Controls -->
+        <aside class="w-80 md:w-96 bg-parchment-100 border-r border-parchment-200 flex flex-col shrink-0 z-10">
+            <div class="p-4 border-b border-parchment-200 bg-parchment-100">
+                <div class="flex items-center justify-between mb-1">
+                    <h2 class="font-bold text-slate-800 font-serif-literary text-lg flex items-center gap-2">
+                        <i class="fa-solid fa-masks-theater text-literary-burgundy"></i>
+                        Select Your Muses
+                    </h2>
+                    <span id="museBadge" class="text-xs bg-literary-burgundy text-white px-2 py-0.5 rounded-full font-bold">2 / 3</span>
+                </div>
+                <p class="text-xs text-slate-500">Choose up to 3 classic poets to inspire tailored next-line recommendations.</p>
+            </div>
+
+            <!-- Poet Cards Scroll Container -->
+            <div id="poetsList" class="flex-1 overflow-y-auto p-3 space-y-2.5">
+                <!-- Poet cards rendered dynamically via JS -->
+            </div>
+        </aside>
+
+        <!-- CENTER: Main Poetry Canvas Workspace -->
+        <main class="flex-1 flex flex-col bg-parchment-50 relative overflow-hidden">
+            
+            <!-- Controls & Settings Header Bar -->
+            <div class="p-3 md:p-4 border-b border-parchment-200 bg-white/60 backdrop-blur-sm flex flex-wrap items-center justify-between gap-3 shadow-sm shrink-0">
+                <div class="flex flex-wrap items-center gap-3 text-xs">
+                    <!-- Form Selector -->
+                    <div class="flex items-center space-x-1.5">
+                        <label class="font-bold text-slate-600 uppercase tracking-wider">Form:</label>
+                        <select id="selectForm" onchange="updateFormAndMeter()" class="bg-parchment-100 border border-parchment-300 rounded-lg font-serif-literary px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-literary-burgundy">
+                            <option value="Free Verse">Free Verse</option>
+                            <option value="Quatrain">Quatrain (AABB/ABAB)</option>
+                            <option value="Sonnet">Shakespearean Sonnet</option>
+                            <option value="Rhyming Couplets">Rhyming Couplets</option>
+                            <option value="Haiku">Haiku (5-7-5)</option>
+                            <option value="Limerick">Limerick (AABBA)</option>
+                        </select>
+                    </div>
+
+                    <!-- Target Meter Selector -->
+                    <div class="flex items-center space-x-1.5">
+                        <label class="font-bold text-slate-600 uppercase tracking-wider">Target Meter:</label>
+                        <select id="selectMeter" onchange="updateFormAndMeter()" class="bg-parchment-100 border border-parchment-300 rounded-lg font-serif-literary px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-literary-burgundy">
+                            <option value="Any Meter">Any Rhythm / Free</option>
+                            <option value="Iambic Pentameter (10 syl)">Iambic Pentameter (10 syl)</option>
+                            <option value="Iambic Tetrameter (8 syl)">Iambic Tetrameter (8 syl)</option>
+                            <option value="Haiku Syllables (5-7-5)">Haiku (5 or 7 syl)</option>
+                        </select>
+                    </div>
+
+                    <!-- Theme Selector -->
+                    <div class="flex items-center space-x-1.5">
+                        <label class="font-bold text-slate-600 uppercase tracking-wider">Theme:</label>
+                        <select id="selectTheme" onchange="updateTheme()" class="bg-parchment-100 border border-parchment-300 rounded-lg font-serif-literary px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-literary-burgundy">
+                            <option value="Nature & Seasons">Nature & Seasons</option>
+                            <option value="Love & Passion">Love & Passion</option>
+                            <option value="Melancholy & Loss">Melancholy & Loss</option>
+                            <option value="Time & Mortality">Time & Mortality</option>
+                            <option value="Hope & Resilience">Hope & Resilience</option>
+                            <option value="Dreams & Mystery">Dreams & Mystery</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-3 text-xs text-slate-600">
+                    <div><span class="font-bold text-slate-500">Lines:</span> <span id="totalLinesCount" class="font-mono bg-parchment-200 px-2 py-0.5 rounded font-bold">0</span></div>
+                    <div><span class="font-bold text-slate-500">Words:</span> <span id="totalWordsCount" class="font-mono bg-parchment-200 px-2 py-0.5 rounded font-bold">0</span></div>
+                </div>
+            </div>
+
+            <!-- Poem Editor Canvas -->
+            <div class="flex-1 overflow-y-auto p-6 md:p-10 flex justify-center">
+                <div class="w-full max-w-2xl flex flex-col">
+                    <!-- Title Input -->
+                    <input type="text" id="poemTitle" placeholder="Title Your Poem..." class="text-3xl font-bold font-serif-literary bg-transparent border-b-2 border-transparent hover:border-parchment-300 focus:border-literary-burgundy text-slate-800 placeholder-slate-400 mb-6 px-1 py-1 focus:outline-none transition-colors text-center md:text-left">
+
+                    <!-- Poem Lines List -->
+                    <div id="poemCanvas" class="space-y-3 min-h-[140px] font-serif-literary text-lg md:text-xl text-slate-800 leading-relaxed">
+                        <!-- Written lines appear here -->
+                    </div>
+
+                    <!-- Input Drafting Box & Analysis -->
+                    <div class="mt-6 pt-4 border-t border-parchment-300/80">
+                        <div class="relative">
+                            <input type="text" id="lineInput" oninput="handleLineTyping()" onkeydown="handleKeyDown(event)" placeholder="Write your next line here..." class="w-full font-serif-literary text-lg md:text-xl bg-white border border-parchment-300 rounded-xl px-4 py-3.5 pr-28 shadow-sm focus:outline-none focus:ring-2 focus:ring-literary-burgundy transition-all">
+                            
+                            <!-- Syllable Badge & Add Button -->
+                            <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center space-x-2">
+                                <span id="currentSyllableCount" class="font-mono text-xs font-bold bg-parchment-200 text-slate-700 px-2.5 py-1 rounded-full shadow-inner">0 syl</span>
+                                <button onclick="commitLine()" class="bg-literary-burgundy hover:bg-opacity-90 text-white p-2 rounded-lg transition shadow-md" title="Add Line (Enter)">
+                                    <i class="fa-solid fa-arrow-down-long"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Meter & Rhyme Target Feedback -->
+                        <div class="flex items-center justify-between text-xs text-slate-500 mt-2 px-1">
+                            <span id="meterAnalysis" class="font-mono text-slate-600">Rhythm: <span class="italic text-slate-400">Type to analyze rhythm</span></span>
+                            <span id="rhymeTargetHint" class="font-mono text-slate-600">Rhyme Target: <span class="font-bold text-literary-burgundy" id="rhymeWordTarget">None</span></span>
+                        </div>
+                    </div>
+
+                    <!-- Poet Suggestions Header & Container -->
+                    <div class="mt-8 border-t border-parchment-200 pt-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-serif-literary font-bold text-slate-700 flex items-center gap-2">
+                                <i class="fa-solid fa-wand-magic-sparkles text-literary-gold"></i>
+                                Poet Muse Suggestions
+                            </h3>
+                            <button id="btnFetchSuggestions" onclick="generateSuggestions(true)" class="text-xs bg-literary-burgundy/10 hover:bg-literary-burgundy hover:text-white text-literary-burgundy font-bold px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 shadow-sm">
+                                <i id="refreshIcon" class="fa-solid fa-rotate-right"></i>
+                                Refresh Suggestions
+                            </button>
+                        </div>
+
+                        <!-- Suggestions List -->
+                        <div id="suggestionsContainer" class="space-y-3">
+                            <!-- Injected dynamically -->
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // ==========================================
+        // 1. INLINE SVG PORTRAITS (100% Reliable, Zero Image Flickering)
+        // ==========================================
+        const POET_PORTRAITS = {
+            dickinson: `<svg viewBox="0 0 100 100" class="w-full h-full rounded-full"><rect width="100" height="100" fill="#2C3E50"/><circle cx="50" cy="45" r="26" fill="#F4D03F" opacity="0.15"/><circle cx="50" cy="36" r="20" fill="#3D2314"/><circle cx="50" cy="18" r="8" fill="#3D2314"/><ellipse cx="50" cy="42" rx="15" ry="18" fill="#F5CBA7"/><path d="M 35 34 C 40 25, 60 25, 65 34 C 60 38, 40 38, 35 34 Z" fill="#2C1A0E"/><path d="M 30 78 C 30 55, 70 55, 70 78 Z" fill="#1C2833"/><path d="M 40 60 Q 50 68 60 60 Q 50 72 40 60" fill="#FFFFFF" opacity="0.9"/><circle cx="44" cy="42" r="1.5" fill="#3D2314"/><circle cx="56" cy="42" r="1.5" fill="#3D2314"/><path d="M 47 49 Q 50 51 53 49" stroke="#3D2314" stroke-width="1" fill="none"/></svg>`,
+            poe: `<svg viewBox="0 0 100 100" class="w-full h-full rounded-full"><rect width="100" height="100" fill="#1A1A1A"/><circle cx="50" cy="50" r="38" fill="#6B1D2F" opacity="0.2"/><ellipse cx="50" cy="38" rx="22" ry="18" fill="#111111"/><ellipse cx="50" cy="46" rx="16" ry="18" fill="#E0C0A8"/><path d="M 28 35 C 25 45, 32 55, 34 50" stroke="#111111" stroke-width="6" fill="none"/><path d="M 72 35 C 75 45, 68 55, 66 50" stroke="#111111" stroke-width="6" fill="none"/><path d="M 25 78 C 25 58, 75 58, 75 78 Z" fill="#0D0D0D"/><path d="M 42 62 L 50 72 L 58 62 L 50 80 Z" fill="#FFFFFF"/><ellipse cx="43" cy="44" rx="3" ry="2" fill="#222"/><ellipse cx="57" cy="44" rx="3" ry="2" fill="#222"/><path d="M 40 40 L 47 42" stroke="#111" stroke-width="1.5"/><path d="M 60 40 L 53 42" stroke="#111" stroke-width="1.5"/></svg>`,
+            whitman: `<svg viewBox="0 0 100 100" class="w-full h-full rounded-full"><rect width="100" height="100" fill="#1E4D4F"/><ellipse cx="50" cy="45" rx="17" ry="20" fill="#DDB892"/><path d="M 15 28 Q 50 15 85 28 Q 50 22 15 28 Z" fill="#4A3B32"/><ellipse cx="50" cy="24" rx="20" ry="10" fill="#3D3028"/><path d="M 32 45 C 30 75, 70 75, 68 45 C 60 85, 40 85, 32 45 Z" fill="#E6E6E6"/><path d="M 20 80 C 20 65, 80 65, 80 80 Z" fill="#B5651D"/><circle cx="43" cy="42" r="2" fill="#3D3028"/><circle cx="57" cy="42" r="2" fill="#3D3028"/></svg>`,
+            shakespeare: `<svg viewBox="0 0 100 100" class="w-full h-full rounded-full"><rect width="100" height="100" fill="#4A235A"/><ellipse cx="50" cy="44" rx="18" ry="20" fill="#F5CBA7"/><path d="M 32 35 C 28 42, 30 55, 34 52" stroke="#5D4037" stroke-width="5" fill="none"/><path d="M 68 35 C 72 42, 70 55, 66 52" stroke="#5D4037" stroke-width="5" fill="none"/><polygon points="48,56 52,56 50,65" fill="#5D4037"/><path d="M 25 68 C 35 60, 65 60, 75 68 Z" fill="#FFFFFF"/><path d="M 28 75 L 72 75 L 75 100 L 25 100 Z" fill="#1A252C"/><circle cx="43" cy="42" r="1.5" fill="#3D2314"/><circle cx="57" cy="42" r="1.5" fill="#3D2314"/></svg>`,
+            hughes: `<svg viewBox="0 0 100 100" class="w-full h-full rounded-full"><rect width="100" height="100" fill="#2E4053"/><ellipse cx="50" cy="45" rx="17" ry="19" fill="#8D5B4C"/><path d="M 33 38 C 35 25, 65 25, 67 38 Z" fill="#1C2833"/><path d="M 25 78 C 25 60, 75 60, 75 78 Z" fill="#1B2631"/><polygon points="48,64 52,64 51,82 49,82" fill="#C0392B"/><circle cx="43" cy="43" r="1.8" fill="#1C2833"/><circle cx="57" cy="43" r="1.8" fill="#1C2833"/></svg>`,
+            angelou: `<svg viewBox="0 0 100 100" class="w-full h-full rounded-full"><rect width="100" height="100" fill="#78281F"/><ellipse cx="50" cy="48" rx="18" ry="20" fill="#6E2C00"/><path d="M 28 42 C 25 20, 75 20, 72 42 Z" fill="#D4AC0D"/><circle cx="28" cy="50" r="4" fill="none" stroke="#F4D03F" stroke-width="2"/><circle cx="72" cy="50" r="4" fill="none" stroke="#F4D03F" stroke-width="2"/><path d="M 42 55 Q 50 62 58 55" stroke="#1C2833" stroke-width="2" fill="none"/><path d="M 25 78 C 25 62, 75 62, 75 78 Z" fill="#B7950B"/></svg>`,
+            frost: `<svg viewBox="0 0 100 100" class="w-full h-full rounded-full"><rect width="100" height="100" fill="#1B4F72"/><ellipse cx="50" cy="46" rx="17" ry="19" fill="#F5CBA7"/><path d="M 30 42 C 28 25, 72 25, 70 42 Z" fill="#D5D8DC"/><path d="M 22 80 C 22 62, 78 62, 78 80 Z" fill="#2C3E50"/><circle cx="43" cy="44" r="1.5" fill="#2C3E50"/><circle cx="57" cy="44" r="1.5" fill="#2C3E50"/></svg>`,
+            shelley: `<svg viewBox="0 0 100 100" class="w-full h-full rounded-full"><rect width="100" height="100" fill="#117A65"/><circle cx="50" cy="44" r="22" fill="#5D4037"/><ellipse cx="50" cy="46" rx="16" ry="18" fill="#FADBD8"/><path d="M 25 80 C 25 62, 75 62, 75 80 Z" fill="#196F3D"/><circle cx="43" cy="44" r="1.8" fill="#3D2314"/><circle cx="57" cy="44" r="1.8" fill="#3D2314"/></svg>`,
+            rossetti: `<svg viewBox="0 0 100 100" class="w-full h-full rounded-full"><rect width="100" height="100" fill="#5B2C6F"/><circle cx="50" cy="40" r="22" fill="#4A235A"/><ellipse cx="50" cy="46" rx="15" ry="18" fill="#FADBD8"/><path d="M 25 80 C 25 60, 75 60, 75 80 Z" fill="#4A235A"/><circle cx="43" cy="44" r="1.5" fill="#341539"/><circle cx="57" cy="44" r="1.5" fill="#341539"/></svg>`,
+            byron: `<svg viewBox="0 0 100 100" class="w-full h-full rounded-full"><rect width="100" height="100" fill="#900C3F"/><circle cx="50" cy="42" r="21" fill="#2A0812"/><ellipse cx="50" cy="45" rx="16" ry="18" fill="#FADBD8"/><path d="M 22 80 C 22 60, 78 60, 78 80 Z" fill="#581845"/><circle cx="43" cy="43" r="1.8" fill="#2A0812"/><circle cx="57" cy="43" r="1.8" fill="#2A0812"/></svg>`
+        };
+
+        const POETS_DATA = [
+            { id: 'dickinson', name: 'Emily Dickinson', era: '1830–1886', style: 'Dashes, slant rhymes, introspective & nature themes.' },
+            { id: 'poe', name: 'Edgar Allan Poe', era: '1809–1849', style: 'Gothic atmosphere, hypnotic rhythm, dark romanticism.' },
+            { id: 'whitman', name: 'Walt Whitman', era: '1819–1892', style: 'Expansive free verse, transcendentalist praise.' },
+            { id: 'shakespeare', name: 'William Shakespeare', era: '1564–1616', style: 'Iambic pentameter, rich metaphors, timeless love.' },
+            { id: 'hughes', name: 'Langston Hughes', era: '1901–1967', style: 'Jazz poetry rhythm, urban blues cadence.' },
+            { id: 'angelou', name: 'Maya Angelou', era: '1928–2014', style: 'Empowering cadence, lyrical resilience, dignity.' },
+            { id: 'frost', name: 'Robert Frost', era: '1874–1963', style: 'Pastoral imagery, rural wisdom, choices.' },
+            { id: 'shelley', name: 'Percy Bysshe Shelley', era: '1792–1822', style: 'Passionate romanticism, idealist nature imagery.' },
+            { id: 'rossetti', name: 'Christina Rossetti', era: '1830–1894', style: 'Devotional lyricism, Victorian romantic melancholia.' },
+            { id: 'byron', name: 'Lord Byron', era: '1788–1824', style: 'Byronic heroism, dashing romantic narrative.' }
+        ];
+
+        // ==========================================
+        // 2. STATE MANAGEMENT
+        // ==========================================
+        let selectedMuseIds = ['dickinson', 'poe'];
+        let poemLines = [];
+        let currentForm = 'Free Verse';
+        let currentMeter = 'Any Meter';
+        let currentTheme = 'Nature & Seasons';
+        let refreshCount = 0;
+
+        window.onload = function() {
+            renderPoetCards();
+            updateFormAndMeter();
+            updateStats();
+            generateSuggestions();
+        };
+
+        function renderPoetCards() {
+            const container = document.getElementById('poetsList');
+            container.innerHTML = '';
+
+            POETS_DATA.forEach(poet => {
+                const isSelected = selectedMuseIds.includes(poet.id);
+                const card = document.createElement('div');
+                card.className = `p-3 rounded-xl border transition-all cursor-pointer flex items-center space-x-3 ${
+                    isSelected ? 'bg-white border-literary-burgundy poet-card-selected' : 'bg-parchment-50/70 border-parchment-200 hover:border-parchment-300 hover:bg-white'
+                }`;
+                card.onclick = () => toggleMuseSelection(poet.id);
+
+                card.innerHTML = `
+                    <div class="w-12 h-12 shrink-0 rounded-full shadow-sm overflow-hidden border border-parchment-300">
+                        ${POET_PORTRAITS[poet.id]}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center justify-between">
+                            <h4 class="font-serif-literary font-bold text-sm text-slate-800 truncate">${poet.name}</h4>
+                            <span class="text-[10px] text-slate-400 font-mono">${poet.era}</span>
+                        </div>
+                        <p class="text-xs text-slate-500 line-clamp-2 mt-0.5">${poet.style}</p>
+                    </div>
+                    <div class="w-5 h-5 rounded-full border flex items-center justify-center text-xs ${
+                        isSelected ? 'bg-literary-burgundy border-literary-burgundy text-white' : 'border-slate-300 text-transparent'
+                    }">
+                        <i class="fa-solid fa-check"></i>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            document.getElementById('museBadge').innerText = `${selectedMuseIds.length} / 3`;
+            document.getElementById('activeMusesCount').innerText = `${selectedMuseIds.length}/3 Muses Selected`;
+        }
+
+        function toggleMuseSelection(id) {
+            if (selectedMuseIds.includes(id)) {
+                selectedMuseIds = selectedMuseIds.filter(i => i !== id);
+            } else {
+                if (selectedMuseIds.length >= 3) {
+                    showToast('Maximum 3 poet muses allowed simultaneously.');
+                    return;
+                }
+                selectedMuseIds.push(id);
+            }
+            renderPoetCards();
+            generateSuggestions(true);
+        }
+
+        // Syllable Counter Helper
+        function countSyllables(word) {
+            word = word.toLowerCase().trim().replace(/[^a-z]/g, '');
+            if (!word) return 0;
+            if (word.length <= 3) return 1;
+            word = word.replace(/(?: грамот|e|es|ed)$/, '');
+            word = word.replace(/^y/, '');
+            const matches = word.match(/[aeiouy]{1,2}/g);
+            return matches ? matches.length : 1;
+        }
+
+        function countLineSyllables(line) {
+            if (!line.trim()) return 0;
+            return line.trim().split(/\s+/).reduce((acc, word) => acc + countSyllables(word), 0);
+        }
+
+        function getLastWord(line) {
+            const words = line.trim().replace(/[^a-zA-Z\s]/g, '').split(/\s+/);
+            return words.length > 0 ? words[words.length - 1] : '';
+        }
+
+        function handleLineTyping() {
+            const input = document.getElementById('lineInput').value;
+            const sylCount = countLineSyllables(input);
+            document.getElementById('currentSyllableCount').innerText = `${sylCount} syl`;
+
+            const meterElem = document.getElementById('meterAnalysis');
+            if (!input.trim()) {
+                meterElem.innerHTML = `Rhythm: <span class="italic text-slate-400">Type to analyze rhythm</span>`;
+            } else {
+                meterElem.innerHTML = `Rhythm: <span class="font-bold text-slate-700">${sylCount} syllables</span>`;
+            }
+        }
+
+        function handleKeyDown(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                commitLine();
+            }
+        }
+
+        function commitLine(text = null) {
+            const inputElem = document.getElementById('lineInput');
+            const lineText = text || inputElem.value.trim();
+            if (!lineText) return;
+
+            poemLines.push(lineText);
+            inputElem.value = '';
+            handleLineTyping();
+            renderPoemCanvas();
+            updateStats();
+            updateRhymeTarget();
+            generateSuggestions(false);
+        }
+
+        function removeLine(idx) {
+            poemLines.splice(idx, 1);
+            renderPoemCanvas();
+            updateStats();
+            updateRhymeTarget();
+            generateSuggestions(false);
+        }
+
+        function renderPoemCanvas() {
+            const canvas = document.getElementById('poemCanvas');
+            canvas.innerHTML = '';
+
+            if (poemLines.length === 0) {
+                canvas.innerHTML = `
+                    <div class="text-center py-12 text-slate-400 italic">
+                        <i class="fa-solid fa-feather-pointed text-3xl mb-3 text-parchment-300 block"></i>
+                        Your canvas is empty. Type your first line or click an AI suggestion to begin...
+                    </div>
+                `;
+                return;
+            }
+
+            poemLines.forEach((line, idx) => {
+                const syls = countLineSyllables(line);
+                const lineRow = document.createElement('div');
+                lineRow.className = "group flex items-center justify-between py-1.5 px-3 rounded-lg hover:bg-parchment-100/80 transition-all border-b border-parchment-200/40";
+                
+                lineRow.innerHTML = `
+                    <span class="flex-1">${line}</span>
+                    <div class="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span class="text-xs font-mono text-slate-400">${syls} syl</span>
+                        <button onclick="removeLine(${idx})" class="text-slate-400 hover:text-red-500 p-1" title="Delete Line">
+                            <i class="fa-solid fa-xmark text-sm"></i>
+                        </button>
+                    </div>
+                `;
+                canvas.appendChild(lineRow);
+            });
+
+            canvas.scrollTop = canvas.scrollHeight;
+        }
+
+        function updateStats() {
+            document.getElementById('totalLinesCount').innerText = poemLines.length;
+            document.getElementById('totalWordsCount').innerText = poemLines.join(' ').trim().split(/\s+/).filter(Boolean).length;
+        }
+
+        function updateFormAndMeter() {
+            currentForm = document.getElementById('selectForm').value;
+            currentMeter = document.getElementById('selectMeter').value;
+            document.getElementById('activeFormLabel').innerText = currentForm;
+            updateRhymeTarget();
+        }
+
+        function updateTheme() {
+            currentTheme = document.getElementById('selectTheme').value;
+            document.getElementById('activeThemeLabel').innerText = currentTheme;
+            generateSuggestions(true);
+        }
+
+        function updateRhymeTarget() {
+            const targetSpan = document.getElementById('rhymeWordTarget');
+            if (poemLines.length === 0) {
+                targetSpan.innerText = 'None';
+                return;
+            }
+
+            const lineNum = poemLines.length + 1;
+            let targetLineIdx = -1;
+
+            if (currentForm === 'Quatrain' || currentForm === 'Sonnet') {
+                if (lineNum % 2 === 0) targetLineIdx = poemLines.length - 1; // Rhyme with previous line
+            } else if (currentForm === 'Rhyming Couplets') {
+                if (lineNum % 2 === 0) targetLineIdx = poemLines.length - 1;
+            }
+
+            if (targetLineIdx >= 0 && poemLines[targetLineIdx]) {
+                const targetWord = getLastWord(poemLines[targetLineIdx]);
+                targetSpan.innerText = targetWord ? `Rhyme with "${targetWord}"` : 'None';
+            } else {
+                targetSpan.innerText = 'Free / Next Stanza';
+            }
+        }
+
+        // ==========================================
+        // 3. CONTEXT-AWARE GEMINI API SUGGESTION ENGINE
+        // ==========================================
+        async function generateSuggestions(isUserRefresh = false) {
+            const container = document.getElementById('suggestionsContainer');
+            const refreshIcon = document.getElementById('refreshIcon');
+
+            if (selectedMuseIds.length === 0) {
+                container.innerHTML = `
+                    <div class="p-4 rounded-xl bg-parchment-100 text-center text-xs text-slate-500 italic">
+                        Select at least one poet muse from the left panel to receive tailored line suggestions.
+                    </div>
+                `;
+                return;
+            }
+
+            if (isUserRefresh) refreshCount++;
+
+            // Loading state animation
+            refreshIcon.classList.add('fa-spin');
+            container.innerHTML = selectedMuseIds.map(id => {
+                const poet = POETS_DATA.find(p => p.id === id);
+                return `
+                    <div class="p-3.5 rounded-xl bg-white border border-parchment-200 animate-pulse flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-full bg-parchment-200 shrink-0"></div>
+                        <div class="flex-1 space-y-2">
+                            <div class="h-3 bg-parchment-200 rounded w-1/4"></div>
+                            <div class="h-4 bg-parchment-200 rounded w-5/6"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            const selectedPoets = selectedMuseIds.map(id => POETS_DATA.find(p => p.id === id));
+            const poemContextText = poemLines.length > 0 
+                ? poemLines.map((l, i) => `Line ${i + 1}: ${l}`).join('\n')
+                : "(This is the start of the poem. Generate an opening line)";
+
+            const targetRhyme = document.getElementById('rhymeWordTarget').innerText;
+
+            // Context-Rich Prompt with Variation Control
+            const systemPrompt = `You are an AI poetry assistant operating in the style of Google's Verse by Verse.
+Your goal is to suggest the NEXT line of a poem based directly on the content, narrative, imagery, and theme written so far.`;
+
+            const userQuery = `Current Poem Context:
+"""
+${poemContextText}
+"""
+
+Poetic Settings:
+- Theme: ${currentTheme}
+- Form: ${currentForm}
+- Meter Constraint: ${currentMeter}
+- Rhyme Requirement: ${targetRhyme}
+- Refresh Iteration: ${refreshCount} (CRITICAL: Produce fresh, new, non-repetitive creative variations)
+
+Selected Poets: ${selectedPoets.map(p => p.name).join(', ')}
+
+Instructions:
+1. For EACH selected poet, write EXACTLY ONE next line that builds seamlessly onto the poem context above.
+2. The line MUST fit the poet's unique voice, tone, and signature style.
+3. If this is a refresh request, take the poem in a FRESH creative direction with unique imagery or metaphors.
+4. Return ONLY a JSON array of objects with keys: "poetId", "poetName", "line", "explanation".`;
+
+            try {
+                const apiKey = "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+
+                const payload = {
+                    contents: [{ parts: [{ text: userQuery }] }],
+                    systemInstruction: { parts: [{ text: systemPrompt }] },
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                        temperature: 0.85 + (refreshCount * 0.05) % 0.3 // Dynamic higher temperature for fresh variations
+                    }
+                };
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                const jsonText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                if (jsonText) {
+                    const suggestions = JSON.parse(jsonText);
+                    renderSuggestions(suggestions);
+                } else {
+                    fallbackSuggestions();
+                }
+            } catch (err) {
+                console.warn('Gemini API fetch fallback triggered:', err);
+                fallbackSuggestions();
+            } finally {
+                refreshIcon.classList.remove('fa-spin');
+            }
+        }
+
+        function renderSuggestions(suggestions) {
+            const container = document.getElementById('suggestionsContainer');
+            container.innerHTML = '';
+
+            suggestions.forEach(sug => {
+                const poet = POETS_DATA.find(p => p.id === sug.poetId) || POETS_DATA.find(p => p.name.includes(sug.poetName)) || POETS_DATA[0];
+                const card = document.createElement('div');
+                card.className = "p-3.5 rounded-xl bg-white border border-parchment-200 hover:border-literary-burgundy/50 shadow-sm transition-all flex items-start space-x-3 group";
+
+                const cleanLine = sug.line.replace(/^["']|["']$/g, '');
+
+                card.innerHTML = `
+                    <div class="w-10 h-10 shrink-0 rounded-full overflow-hidden border border-parchment-300">
+                        ${POET_PORTRAITS[poet.id]}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-literary-burgundy font-serif-literary">${poet.name}</span>
+                            <span class="text-[10px] text-slate-400 font-mono">${countLineSyllables(cleanLine)} syl</span>
+                        </div>
+                        <p class="font-serif-literary text-slate-800 text-sm md:text-base font-medium my-1 group-hover:text-literary-burgundy transition-colors">
+                            "${cleanLine}"
+                        </p>
+                        <p class="text-[11px] text-slate-500 italic">${sug.explanation || 'Contextual continuation.'}</p>
+                    </div>
+                    <button onclick="commitLine('${cleanLine.replace(/'/g, "\\'")}')" class="shrink-0 bg-parchment-100 hover:bg-literary-burgundy hover:text-white text-slate-700 p-2 rounded-lg transition text-xs flex items-center gap-1 font-sans font-bold shadow-sm" title="Use this line">
+                        <span>Use</span>
+                        <i class="fa-solid fa-plus text-xs"></i>
+                    </button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // Context-Aware Offline Fallback
+        function fallbackSuggestions() {
+            const THEME_LINES = {
+                'Nature & Seasons': [
+                    "A quiet breeze awakens through the trees —",
+                    "The golden sunlight fades upon the hill,",
+                    "Where wild rivers weave their silver thread,",
+                    "And autumn leaves fall softly to the ground."
+                ],
+                'Love & Passion': [
+                    "Your gentle shadow lingers in my mind,",
+                    "A flame that burns beyond the touch of time,",
+                    "In quiet whispers soft as fallen rain,",
+                    "Heartbeats echoes where dark silence used to reign."
+                ],
+                'Melancholy & Loss': [
+                    "The silent echoes drift across the room —",
+                    "A heavy stillness settles on the stone,",
+                    "Where memories of yesteryear reside,",
+                    "And shadows lengthen in the fading light."
+                ]
+            };
+
+            const pool = THEME_LINES[currentTheme] || THEME_LINES['Nature & Seasons'];
+
+            const suggestions = selectedMuseIds.map((id, idx) => {
+                const poet = POETS_DATA.find(p => p.id === id);
+                const lineIndex = (refreshCount + idx) % pool.length;
+                return {
+                    poetId: poet.id,
+                    poetName: poet.name,
+                    line: pool[lineIndex],
+                    explanation: `Tailored context suggestion in ${poet.name}'s rhythm.`
+                };
+            });
+
+            renderSuggestions(suggestions);
+        }
+
+        // ==========================================
+        // 4. UTILITIES
+        // ==========================================
+        function toggleAudioPlayback() {
+            if (poemLines.length === 0) {
+                showToast('Write a few lines before listening!');
+                return;
+            }
+
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const title = document.getElementById('poemTitle').value || 'Untitled Poem';
+                const fullText = `${title}. ${poemLines.join('. ')}`;
+                const utterance = new SpeechSynthesisUtterance(fullText);
+                utterance.rate = 0.85;
+                window.speechSynthesis.speak(utterance);
+                showToast('Playing poem recitation...');
+            } else {
+                showToast('Speech synthesis not supported in this browser.');
+            }
+        }
+
+        function exportPoem() {
+            if (poemLines.length === 0) {
+                showToast('Nothing to export yet!');
+                return;
+            }
+
+            const title = document.getElementById('poemTitle').value || 'Untitled Poem';
+            const textContent = `${title.toUpperCase()}\n${'='.repeat(title.length)}\nTheme: ${currentTheme} | Form: ${currentForm}\n\n${poemLines.join('\n')}\n\n-- Created with Verse by Verse AI Studio`;
+
+            const blob = new Blob([textContent], { type: 'text/plain;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `${title.toLowerCase().replace(/\s+/g, '_')}_poem.txt`;
+            link.click();
+            showToast('Poem exported successfully!');
+        }
+
+        function confirmClearWorkspace() {
+            if (poemLines.length === 0) return;
+            if (confirm('Clear your current poem canvas?')) {
+                poemLines = [];
+                document.getElementById('poemTitle').value = '';
+                renderPoemCanvas();
+                updateStats();
+                updateRhymeTarget();
+                generateSuggestions(false);
+                showToast('Canvas cleared.');
+            }
+        }
+
+        function showToast(msg) {
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-5 right-5 bg-literary-burgundy text-white text-xs px-4 py-2.5 rounded-lg shadow-xl z-50 animate-bounce';
+            toast.innerText = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2500);
+        }
+    </script>
+</body>
+</html>
